@@ -9,6 +9,9 @@ var timer = setInterval(animate, interval);
 var startButton = new GameObject();
 var menuBackground = new GameObject();
 var canvasBackground = new GameObject();
+canvasBackground.width = 1024;
+canvasBackground.height = 512;
+canvasBackground.img.src = "images/TitleBack.png";
 menuBackground.img.src = "images/Wizard2.png";
 gameStates[`menu`] =function(){
 	
@@ -24,7 +27,7 @@ gameStates[`menu`] =function(){
 	{
 		menuBackground.img.src = "images/Wizard2.png";
     }
-
+	canvasBackground.drawStaticImage();
 	menuBackground.drawStaticImage();
 }
 
@@ -119,7 +122,7 @@ gameStates[`game`] = function()
 		wiz.canJump = false;
 		wiz.vy = wiz.jumpHeight;
 		wiz.changeState(`jump`);
-		
+		sounds.play('Jump', .5);
 	}
 	if(s)
 	{
@@ -169,7 +172,7 @@ gameStates[`game`] = function()
 		if(canShoot)
 		{
 			shotTimer = shotDelay;
-			
+			sounds.play('Fireball', .5);
 			wiz.changeState('attack');
 			wiz.width = 120;
 			
@@ -270,7 +273,7 @@ gameStates[`game`] = function()
 
 	for(let i = 0; i < 100; i++)
 	{
-		_bullets[i].img.src = "images/Fire.png"
+		_bullets[i].img.src = "images/fire.png"
 		_bullets[i].drawStaticImage()
 		_bullets[i].move();
 		_bullets[i].angle+=100
