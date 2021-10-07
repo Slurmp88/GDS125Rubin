@@ -18,8 +18,8 @@ function circle()
     this.color = `rgb(${randRange(0,255)}, ${randRange(0,255)}, ${randRange(0,255)})`;
     this.x = canvas.width *.5;
     this.y = canvas.height *.5;
-    this.vx = 10;//randRange(1, 20);
-    this.vy = 10;//randRange(1, 20);
+    this.vx = randRange(1, 20);
+    this.vy = randRange(1, 20);
 
     this.drawCircle = function(){
         ctx.beginPath();
@@ -59,7 +59,7 @@ function circle()
         }
     }
 }
-for(var i = 0; i < 100; i++)
+for(var i = 0; i < 10000; i++)
 {
     list[i] = new circle();
 }
