@@ -17,17 +17,59 @@ function player()
     this.width = 0;
     this.height = 0;
 
-    this.drawBox = function(){
+    this.drawCircle = function()
+    {
         ctx.save();
         ctx.fillStyle = this.color;
-        ctx.translate(this.x, this.y)
-        ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height)
+        ctx.beginPath();
+        ctx.translate(this.x, this.y);
+        ctx.arc(0, 0, this.height/2, 0, 360 *Math.PI/180, true);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
+    }
+
+    this.drawBox = function(){
+    	ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.translate(this.x, this.y);
+        ctx.fillRect((-this.width/2), (-this.height/2), this.width, this.height);
+		ctx.restore();
     }
 
     this.move = function()
     {
-        charecter.x += charecter.vx;
-        charecter.y += charecter.vy;
+        this.x += this.vx;
+        this.y += this.vy;
     }
+
+    this.left = function() 
+	{
+		return this.x - this.width/2;
+	}
+	this.right = function() 
+	{
+		return this.x + this.width/2;
+	}
+	
+	this.top = function() 
+	{
+		return this.y - this.height/2;
+	}
+	this.bottom = function() 
+	{
+		return this.y + this.height/2;
+	}
+	
+	this.hitTestObject = function(obj)
+	{
+		if(this.left() < obj.right() && 
+		   this.right() > obj.left() &&
+		   this.top() < obj.bottom() &&
+		   this.bottom() > obj.top())
+		{
+			return true
+		}
+		return false;
+	}
 }
