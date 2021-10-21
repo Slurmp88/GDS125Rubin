@@ -15,6 +15,15 @@ function GameObject()
     //Size
     this.width = 0;
     this.height = 0;
+    
+    //Text
+    this.text = "";
+
+    this.drawText = function()
+    {
+        ctx.font = "30px Arial";
+        ctx.fillText(text, x, y);
+    }
 
     this.drawCircle = function()
     {

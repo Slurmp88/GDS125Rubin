@@ -12,6 +12,9 @@ var down = false;
 var up = false;
 var right = false;
 var left = false;
+var img = document.getElementById("cage");
+var p1Wins = 0;
+var p2Wins = 0;
 
 var keys=[];
 
@@ -50,7 +53,7 @@ ball.height = 60;
 ball.width = 60;
 ball.x = canvas.width/2;
 ball.y = canvas.height/2;
-ball.vx = 3;
+ball.vx = 5;
 ball.vy = 0;
 ball.color = `rgb(${randRange(0,255)}, ${randRange(0,255)}, ${randRange(0,255)})`;
 
@@ -116,12 +119,12 @@ function animate()
         if(ball.y < charecter.y - charecter.width/6)
         {
             ball.vx = -ball.vx;
-            ball.vy = -3 ;
+            ball.vy = -5 ;
         }
         else if(ball.y > charecter.y + charecter.width/6)
         {
             ball.vx = -ball.vx;
-            ball.vy = 3;
+            ball.vy = 5;
         }
         else
         {
@@ -135,12 +138,12 @@ function animate()
         if(ball.y < charecter2.y - charecter2.width/6)
         {
             ball.vx = -ball.vx;
-            ball.vy = -3 ;
+            ball.vy = -5 ;
         }
         else if(ball.y > charecter2.y + charecter2.width/6)
         {
             ball.vx = -ball.vx;
-            ball.vy = 3;
+            ball.vy = 5;
         }
         else
         {
@@ -164,16 +167,41 @@ function animate()
     if(ball.x < ball.height/2)
     {
         ball.x = canvas.width /2;
+        p2Wins++;
+        text = "Player 1 Wins = "
         ball.color = `rgb(${randRange(0,255)}, ${randRange(0,255)}, ${randRange(0,255)})`;
     }
     //Right
     if(ball.x > canvas.width + ball.height/2)
     {
+        p1Wins++;
         ball.x = canvas.width / 2;
         ball.color = `rgb(${randRange(0,255)}, ${randRange(0,255)}, ${randRange(0,255)})`;
     }
     ctx.clearRect(0,0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.strokeStyle = "yellow"
+    ctx.beginPath();
+    ctx.moveTo((canvas.width/2), 0)
+    ctx.lineTo((canvas.width/2), canvas.height)
+    ctx.closePath()
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.restore();
+
     charecter.drawBox();
     charecter2.drawBox();
-    ball.drawCircle();
+    //ball.drawCircle();
+    ctx.drawImage(img, ball.x - ball.width + 19, ball.y - ball.height + 29, 80, 67);
+
+    ctx.save();
+    ctx.font = "30px Arial"
+    ctx.fillStyle = "black"
+    ctx.textAlign = "center";
+    ctx.fillText("Player 1 || Player 2", (canvas.width/2), 30);
+    ctx.fillText(p1Wins + " || " + p2Wins, (canvas.width/2), 60);
+    ctx.restore();
+
+
 }
