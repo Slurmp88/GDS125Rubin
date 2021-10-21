@@ -29,15 +29,23 @@ document.addEventListener("keyup",function(e)
     keys[String.fromCharCode(e.keyCode)] = false;
 })
 
-//create player;
-charecter = new player();
-charecter.x = 120;
+//create GameObject;
+charecter = new GameObject();
+charecter.x = 20;
 charecter.y = canvas.height/2;
-charecter.width = 50;
+charecter.width = 20;
 charecter.height = 150;
 
+//create 2nd GameObject;
+charecter2 = new GameObject();
+charecter2.x = canvas.width - 20;
+charecter2.y = canvas.height/2;
+charecter2.width = 20;
+charecter2.height = 150;
+charecter2.color = "red";
+
 //create ball;
-ball = new player();
+ball = new GameObject();
 ball.height = 60;
 ball.width = 60;
 ball.x = canvas.width/2;
@@ -73,6 +81,30 @@ function animate()
         charecter.vy = 0;
     }
 
+    //movement 2
+    if(keys['&']){
+        charecter2.vy = -10;
+    }
+    else if(keys['('])
+    {
+        charecter2.vy = 10;
+    }
+    else
+    {
+        charecter2.vy = 0;
+    }
+    charecter2.move();
+    if(charecter2.y < charecter2.height / 2)
+    {
+        charecter2.y = charecter2.height / 2;
+        charecter.vy = 0;
+    }
+    if(charecter2.y > canvas.height - charecter2.height / 2)
+    {
+        charecter2.y = canvas.height - charecter2.height / 2;
+        charecter2.vy = 0;
+    }
+
     //Detection
 
     //Move the charecter
@@ -87,6 +119,25 @@ function animate()
             ball.vy = -3 ;
         }
         else if(ball.y > charecter.y + charecter.width/6)
+        {
+            ball.vx = -ball.vx;
+            ball.vy = 3;
+        }
+        else
+        {
+            ball.vx = -ball.vx; 
+        }
+    } 
+
+    if(charecter2.hitTestObject(ball))
+    {
+        ball.x = charecter2.x - charecter2.width/2 - ball.width/2;
+        if(ball.y < charecter2.y - charecter2.width/6)
+        {
+            ball.vx = -ball.vx;
+            ball.vy = -3 ;
+        }
+        else if(ball.y > charecter2.y + charecter2.width/6)
         {
             ball.vx = -ball.vx;
             ball.vy = 3;
@@ -112,16 +163,17 @@ function animate()
     //Left
     if(ball.x < ball.height/2)
     {
-        ball.x = canvas.width / 4;
+        ball.x = canvas.width /2;
         ball.color = `rgb(${randRange(0,255)}, ${randRange(0,255)}, ${randRange(0,255)})`;
     }
     //Right
-    if(ball.x > canvas.width - ball.height/2)
+    if(ball.x > canvas.width + ball.height/2)
     {
-        ball.vx = -ball.vx;
+        ball.x = canvas.width / 2;
         ball.color = `rgb(${randRange(0,255)}, ${randRange(0,255)}, ${randRange(0,255)})`;
     }
     ctx.clearRect(0,0, canvas.width, canvas.height);
     charecter.drawBox();
+    charecter2.drawBox();
     ball.drawCircle();
 }
