@@ -1,0 +1,346 @@
+
+var canvas = document.getElementById("canvas");
+	
+var context = canvas.getContext("2d");
+
+//Mouse Positional Data
+var mousex = 0;
+var mousey = 0;
+
+document.addEventListener("mousemove", () => {
+var rect = canvas.getBoundingClientRect();
+mousex = event.clientX - rect.left; // Gets Mouse X
+mousey = event.clientY - rect.top; // Gets Mouse Y
+});
+
+var interval = 1000/60;
+var timer = setInterval(animate, interval);
+
+var player = new GameObject({width:50, height:50, angle:0, x:canvas.width/2, y:canvas.height - 300, force:1, color:"gray"})
+
+//This is used to move the level elements
+var level = new Level();
+//This generates a tile based level.
+level.generate(level.l1, 100, 100);	
+
+var fx = .85;
+var fy = .85;
+var canRope = true;
+var ropeTimer;
+var states =[];
+var currentState = "play";
+
+
+//Bullet Vars
+var canShoot = true;
+var _bullets = [];
+var explosion = [];
+var empty = [];
+var hasAmmo = true;
+var shotDelay;
+var reloadDelay;
+var isLoading = false;
+var bulletCount = 0;
+//When moving the level, we first move the player as usual. Then we utilize an offset object to keep track of how much the collision detection affects the player's position. Then we move both the player and the level back the total number of pixels that the player moved over one loop of animation.
+
+states["menu"] = function()
+{
+
+}
+
+//Creat Guns
+var pistol = new Gun({width:25, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 400, ammo:17, ammoCount: 17, damage: 5, velocity: 50, reloadSpeed: 700})
+
+var launcher = new Gun({explosive: true, explosionSize: 1, ammoSize: 3, width:80, height:16, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 400, ammo:1, ammoCount: 1, damage: 15, velocity: 20, reloadSpeed: 1600})
+
+var rifle = new Gun({distance: 15, width:60, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 100, ammo:30, ammoCount: 30, damage: 7, velocity: 50, reloadSpeed: 1000})
+
+var ShotGun = new Gun({knockback: 10, shotDivergence: 6, distance: 15, width:40, height:16, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 260, ammo:2, ammoCount: 2, damage: 4, velocity: 30, reloadSpeed: 1000, pelletCount: 10})
+
+var subGun = new Gun({ shotDivergence: 5, distance: 15, width:35, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 50, ammo:50, ammoCount: 50, damage: 8, velocity: 30, reloadSpeed: 700, pelletCount: 1})
+
+
+var gun = pistol;
+
+states["play"] = function()
+{
+	//Apply acceleration to velocity. 
+	if(a)
+	{
+		player.vx += -player.ax * player.force;
+	}
+	if(d)
+	{
+		player.vx += player.ax * player.force;
+	}
+	if(s)
+	{
+		player.vy += player.ay * player.force;
+	}
+	if(w)
+	{
+		player.vy += -player.ay * player.force;
+	}
+
+	//MOVE PLAYER
+	player.vx *= fx;
+	player.vy *= fy;
+	player.x += player.vx;
+	player.y += player.vy;
+	
+	//Used to move the player and level back so that it appears as though the level moved and not the player.
+	var offset = {x:player.vx, y:player.vy};
+	
+	//All tile code
+	for(var i = 0; i < level.grid.length; i++)
+	{
+		level.grid[i].drawRect();
+
+		//Hit top
+		while(level.grid[i].hitTestPoint(player.top()))
+		{
+			player.vy = 0;
+			player.y++;
+			offset.y++;
+		}
+		//Hit right
+		while(level.grid[i].hitTestPoint(player.right()))
+		{
+			player.vx = 0;
+			player.x--;
+			offset.x--;
+		}
+		//Hit left
+		while(level.grid[i].hitTestPoint(player.left()))
+		{
+			player.vx = 0;
+			player.x++;
+			offset.x++;
+		}
+		//Hit bottom
+		while(level.grid[i].hitTestPoint(player.bottom()))
+		{
+			player.vy = 0;
+			player.y--;
+			offset.y--;
+		}
+	
+		/*while(level.grid[i].hitTestPoint({x:player.left().x, y:player.bottom().y, world:player.world}))
+		{
+			player.y--;
+			player.vy = 0;
+			offset.y--;
+		}*/
+		/*while(level.grid[i].hitTestPoint({x:player.right().x, y:player.bottom().y, world:player.world}))
+		{
+			player.y--;
+			player.vy = 0;
+			offset.y--;
+		}*/
+	}
+
+	// Draw Points
+	for(var i = 0; i < level.point.length; i++)
+	{
+		level.point[i].drawCircle();
+	}
+	
+	//Rope Code
+	//console.log(Math.abs(getClosestPoint().distance(player)))
+	for(i in level.point)
+	{
+		level.point[i].color = "red";
+	}
+	if(Math.abs(getClosestPoint().distance(player)) < 150)
+	{
+		getClosestPoint().color = "yellow";
+		frictionY = .50;
+	}
+	if(space && Math.abs(getClosestPoint().distance(player)) < 160 && canRope)
+	{
+		canRope = false;
+		player.canJump = true;
+		//Draw Line
+		context.save()
+		context.beginPath();
+		context.moveTo(player.x + player.world.x, player.y+player.world.y);
+		context.lineTo(getClosestPoint().x + getClosestPoint().world.x, getClosestPoint().y + getClosestPoint().world.y);
+		context.stroke();
+		context.restore();
+
+		//Calculations
+		player.vx = Math.cos(player.getAngle(getClosestPoint())) * 20;
+		player.vy = Math.sin(player.getAngle(getClosestPoint())) * 40;
+		
+		clearTimeout(ropeTimer);
+		ropeTimer = setTimeout(setRope, 400)
+	}
+
+
+	//Gun Code **********************************************************
+
+	if(b1)
+	{
+		if(gun.ammo == 0)
+		{
+			canShoot = true;
+		}
+		gun = rifle;
+	}
+	if(b2)
+	{
+		if(gun.ammo == 0)
+		{
+			canShoot = true;
+		}
+		gun = subGun;
+	}
+	if(b3)
+	{
+		if(gun.ammo == 0)
+		{
+			canShoot = true;
+		}
+		gun = ShotGun;
+	}
+
+	//Move Gun X and Y to correct Posistions
+	var gunAngle = ((player.angle * 180 / Math.PI) + 45) * Math.PI / 180;
+	gun.x = player.x + (Math.cos(gunAngle) * player.width/2) - offset.x;
+	gun.y = player.y + (Math.sin(gunAngle) * player.width/2) - offset.y;
+
+	//rotate Gun
+	gun.angle = gun.getAngle({x:mousex, y:mousey, world:player.world});
+	//rotate Player
+	player.angle = player.getAngle({x:mousex, y:mousey, world:player.world});
+
+	//Shooting Code
+	if(mouseDown && canShoot && hasAmmo)
+	{
+		canShoot = false;
+		if(gun.ammo != 0)
+		{
+			gun.ammo--;
+			if(gun.pelletCount == 1)
+			{
+				_bullets[bulletCount] = new GameObject({width:10 * gun.ammoSize, height:5 * gun.ammoSize, angle:gun.angle, x:gun.x, y:gun.y, vx: Math.cos(gun.angle + (rand(-gun.shotDivergence, gun.shotDivergence) * Math.PI/180)) * gun.velocity, vy:Math.sin(gun.angle + (rand(-gun.shotDivergence, gun.shotDivergence) * Math.PI/180)) * gun.velocity});
+				bulletCount++;
+			}
+			else
+			{
+				for(var i = 0; i < gun.pelletCount; i++)
+				{
+					_bullets[bulletCount] = new GameObject({width:10, height:5, angle:gun.angle, x:gun.x, y:gun.y, vx: Math.cos(gun.angle + (rand(-gun.shotDivergence, gun.shotDivergence) * Math.PI/180)) * (gun.velocity + rand(-1, 1)), vy:Math.sin(gun.angle + (rand(-gun.shotDivergence, gun.shotDivergence) * Math.PI/180)) * (gun.velocity + rand(-1, 1))});
+					bulletCount++;
+				}
+				console.log(_bullets);
+			}
+			clearTimeout(shotDelay);
+			shotDelay = setTimeout(reset, gun.fireRate);
+		}
+	}
+
+	//Reloading Code
+	if(r && !mouseDown)
+	{
+		canShoot = false;
+		clearTimeout(reloadDelay);
+		isLoading = true;
+		reloadDelay = setTimeout(stopLoading, gun.reloadSpeed);
+	}
+	//******************************************************************************* */
+
+
+	//Moves the level and the player back the total number of pixels traveled over one animation loop.
+	player.x -= offset.x;
+	player.y -= offset.y;
+	level.x -= offset.x;
+	level.y -= offset.y;
+
+	//console.log("VX:  " + Math.cos(gun.angle) * gun.velocity + "   VY:  " +Math.sin(gun.angle) * gun.velocity);
+
+	//Draws the player
+	player.drawRect();
+	//player.drawDebug();
+
+	//Draw Gun
+	gun.drawRect();
+	
+
+	for(var bullet = 0; bullet < _bullets.length; bullet++)
+	{
+		_bullets[bullet].x += _bullets[bullet].vx;
+		_bullets[bullet].y += _bullets[bullet].vy;
+		_bullets[bullet].drawRect();
+	
+		for(var i = 0; i < level.grid.length; i++)
+		{
+			//Hit top
+			if(level.grid[i].hitTestPoint({x:_bullets[bullet].x + _bullets[bullet].vx, y:_bullets[bullet].y + _bullets[bullet].vy, world:player.world}))
+			{
+				_bullets[bullet].x = 10000;
+				_bullets[bullet].y = 10000;
+			}
+		}
+	}
+
+	
+
+	if(!isLoading)
+	{
+		context.save();
+		context.font = "30px Arial"
+		context.fillStyle = "black"
+		context.textAlign = "center";
+		context.fillText("Ammo:"+ gun.ammo + "/" + gun.ammoCount, 90 - offset.x, 29 -offset.y);
+		context.restore();
+	}
+	else
+	{
+		context.save();
+		context.font = "30px Arial"
+		context.fillStyle = "black"
+		context.textAlign = "center";
+		context.fillText("Ammo: Reloading...", 138 - offset.x, 29 -offset.y);
+		context.restore();
+	}
+}
+
+//--------------------------------------------Animation Loop-------------------------------------------
+function animate()
+{
+	context.clearRect(0,0,canvas.width, canvas.height);	
+	states[currentState]();
+}
+
+//-----------------------------------------------Functions----------------------------------------------
+function getClosestPoint()
+{
+	level.point.sort((a, b) => a.distance(player) - b.distance(player));
+	return level.point[0];
+}
+
+reset = function()
+{
+	canShoot = true;
+}
+
+stopLoading = function()
+{
+	isLoading = false;
+	canShoot = true;
+	reload(gun);
+	_bullets = empty;
+	bulletCount = 0;
+}
+
+setRope = function()
+{
+	canRope = true;
+}
+
+reload = function(gun)
+{
+	gun.ammo = gun.ammoCount;
+}
+

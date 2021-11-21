@@ -48,7 +48,6 @@ function getClosestPoint()
 
 function animate()
 {
-	console.log(canRope);
 	ctx.clearRect(0,0,canvas.width, canvas.height);	
 	frictionY = .97;
 	//Change Point Colors
