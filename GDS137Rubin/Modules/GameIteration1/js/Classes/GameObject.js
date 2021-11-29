@@ -16,6 +16,8 @@ function GameObject(obj)
 		this.vx = 0;
 		this.vy = 0;
 		this.world = {x:0, y:0};
+		this.health = 100;
+		this.damage = 0;
 	
 		//the angle that the graphic is drawn facing.
 		this.angle = 0;	

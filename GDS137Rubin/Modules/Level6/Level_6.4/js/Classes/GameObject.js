@@ -1,9 +1,5 @@
 
-/*------------------------------------------------------------------------------------------------------------------
-IMPORTANT: This file has been modified with an additional "world" property. If you don't want an object to move within the level it's "world" property should be set to {x:0, y:0}. Typically the player's world is {x:0, y:0}, while everything in the level will use the level object as it's world.
---------------------------------------------------------------------------------------------------------------------*/
-
-function Enemy(obj)
+function GameObject(obj)
 {	
 		this.x = canvas.width/2;
 		this.y = canvas.height/2;
@@ -15,17 +11,10 @@ function Enemy(obj)
 		this.ay = 1;
 		this.vx = 0;
 		this.vy = 0;
-		this.world = {x:0, y:0};
-
-        this.health = 40;
-        this.sizeMod = 1;
-        this.speed = 1;
-        this.trackingStrength = 1;
-        this.damage = 0;
-
-	
+		
 		//the angle that the graphic is drawn facing.
-		this.angle = 0;	
+		this.angle = 0;
+		
 		
 		//------Allows us to pass object literals into the class to define its properties--------//
 		//------This eliminate the need to pass in the property arguments in a specific order------------//
@@ -36,14 +25,19 @@ function Enemy(obj)
 				if(this[value]!== undefined)
 				this[value] = obj[value];
 			}
-        }
+		}
+	
+	
+	//whether or not the object can jump
+	this.canJump = false;
+	this.jumpHeight = -25;
+	
 
 	this.drawRect = function()
 	{
 		context.save();
 			context.fillStyle = this.color;
-			context.translate(this.x + this.world.x, this.y + this.world.y);
-			context.rotate(this.angle);
+			context.translate(this.x, this.y);
 			context.fillRect((-this.width/2), (-this.height/2), this.width, this.height);
 		context.restore();
 		
@@ -54,7 +48,7 @@ function Enemy(obj)
 		context.save();
 			context.fillStyle = this.color;
 			context.beginPath();
-			context.translate(this.x + this.world.x, this.y + this.world.y);
+			context.translate(this.x, this.y);
 			context.arc(0, 0, this.radius(), 0, 360 *Math.PI/180, true);
 			context.closePath();
 			context.fill();
@@ -67,18 +61,19 @@ function Enemy(obj)
 	{
 			context.save();
 			context.fillStyle = this.color;
-			context.translate(this.x + this.world.x, this.y + this.world.y);
+			context.translate(this.x, this.y);
 			//To convert deg to rad multiply deg * Math.PI/180
-			context.rotate(this.angle);
+			context.rotate(this.angle * Math.PI/180);
 			context.beginPath();
 				context.moveTo(0+ this.width/2, 0);
-				context.lineTo(0 - this.width/2, 0 - this.height/2);
-				context.lineTo(0 - this.width/2, 0 + this.height/2);
+				context.lineTo(0 - this.width/2, 0 - this.height/4);
+				context.lineTo(0 - this.width/2, 0 + this.height/4);
 				context.closePath();
 			context.fill();
-		context.restore();	
+		context.restore();
+		
 	}	
-
+	
 	this.move = function()
 	{
 		this.x += this.vx;
@@ -89,28 +84,28 @@ function Enemy(obj)
 	//---------Returns object's for the top, bottom, left and right of an object's bounding box.
 	this.left = function() 
 	{
-		return {x:this.x - this.width/2 , y:this.y, world:this.world}
+		return {x:this.x - this.width/2 , y:this.y}
 	}
 	this.right = function() 
 	{
-		return {x:this.x + this.width/2 , y:this.y, world:this.world}
+		return {x:this.x + this.width/2 , y:this.y}
 	}
 	
 	this.top = function() 
 	{
-		return {x:this.x, y:this.y - this.height/2, world:this.world}
+		return {x:this.x, y:this.y - this.height/2}
 	}
 	this.bottom = function() 
 	{
-		return {x:this.x , y:this.y + this.height/2, world:this.world}
+		return {x:this.x , y:this.y + this.height/2}
 	}
 	
 	this.hitTestObject = function(obj)
 	{
-		if(this.left().x + this.world.x <= obj.right().x + obj.world.x && 
-		   this.right().x + this.world.x >= obj.left().x + obj.world.x &&
-		   this.top().y + this.world.y <= obj.bottom().y + obj.world.y &&
-		   this.bottom().y + this.world.y >= obj.top().y + obj.world.y)
+		if(this.left().x <= obj.right().x && 
+		   this.right().x >= obj.left().x &&
+		   this.top().y <= obj.bottom().y &&
+		   this.bottom().y >= obj.top().y)
 		{
 			return true
 		}
@@ -120,10 +115,10 @@ function Enemy(obj)
 	//------Tests whether a single point overlaps the bounding box of another object-------
 	this.hitTestPoint = function(obj)
 	{
-		if(obj.x + obj.world.x >= this.left().x + this.world.x && 
-		   obj.x + obj.world.x <= this.right().x + this.world.x &&
-		   obj.y + obj.world.y >= this.top().y + this.world.y &&  
-		   obj.y + obj.world.y <= this.bottom().y + this.world.y)
+		if(obj.x >= this.left().x && 
+		   obj.x <= this.right().x &&
+		   obj.y >= this.top().y &&  
+		   obj.y <= this.bottom().y)
 		{
 			return true;
 		}
@@ -155,19 +150,5 @@ function Enemy(obj)
 		context.fillRect(this.bottom().x-size/2, this.bottom().y-size/2, size, size);
 		context.fillRect(this.x-size/2, this.y-size/2, size, size);
 		context.restore();
-	}
-
-	this.distance = function(obj)
-	{
-		var xDist = (this.x + this.world.x) - (obj.world.x + obj.x);
-		var yDist = (this.y + this.world.y) - (obj.world.y + obj.y);
-		return Math.sqrt((xDist * xDist) + (yDist * yDist));
-	}
-
-	this.getAngle = function(obj)
-	{
-		var xDist = (obj.world.x + obj.x) - (this.x + this.world.x);
-		var yDist = (obj.world.y + obj.y) - (this.y + this.world.y);
-		return Math.atan2(yDist, xDist)
 	}
 }
