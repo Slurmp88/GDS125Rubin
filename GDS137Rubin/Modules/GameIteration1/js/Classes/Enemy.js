@@ -9,7 +9,7 @@ function Enemy(obj)
 		this.y = canvas.height/2;
 		this.width = 100;
 		this.height = 100;
-		this.color = "#ff0000";
+		this.color = "red";
 		this.force = 1;
 		this.ax = 1;
 		this.ay = 1;
@@ -22,7 +22,7 @@ function Enemy(obj)
         this.speed = 1;
         this.trackingStrength = 1;
         this.damage = 0;
-
+		this.hit = false;
 	
 		//the angle that the graphic is drawn facing.
 		this.angle = 0;	

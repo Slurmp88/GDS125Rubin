@@ -16,7 +16,7 @@ mousey = event.clientY - rect.top; // Gets Mouse Y
 var interval = 1000/60;
 var timer = setInterval(animate, interval);
 
-var player = new GameObject({width:50, height:50, angle:0, x:canvas.width/2, y:canvas.height - 300, force:1, color:"gray"})
+var player = new GameObject({width:50, height:50, angle:0, x:canvas.width/2, y:canvas.height - 300, force:1, color:"gray", health: 100})
 
 //This is used to move the level elements
 var level = new Level();
@@ -28,7 +28,7 @@ var fy = .85;
 var canRope = true;
 var ropeTimer;
 var states =[];
-var currentState = "play";
+var currentState = "menu";
 
 //Round/Enemy Vars
 var enemyAmount = 10;
@@ -50,15 +50,26 @@ var bulletCount = 0;
 
 states["menu"] = function()
 {
-
+	context.save();
+	context.font = "30px Arial"
+	context.fillStyle = "black"
+	context.textAlign = "center";
+	context.fillText("Press SPACE to play!", canvas.width/2, canvas.height/2);
+	context.restore();
+	console.log(space);
+	if(space)
+	{
+		resetAllVars();
+		currentState = "play";
+	}
 }
 
-//Creat Guns
+//Create Guns
 var pistol = new Gun({width:25, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 400, ammo:17, ammoCount: 17, damage: 5, velocity: 50, reloadSpeed: 700})
 
 var launcher = new Gun({explosive: true, explosionSize: 1, ammoSize: 3, width:80, height:16, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 400, ammo:1, ammoCount: 1, damage: 15, velocity: 20, reloadSpeed: 1600})
 
-var rifle = new Gun({distance: 15, width:60, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 100, ammo:30, ammoCount: 30, damage: 7, velocity: 50, reloadSpeed: 1000})
+var rifle = new Gun({distance: 15, width:60, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 100, ammo:30, ammoCount: 30, damage: 11, velocity: 50, reloadSpeed: 1000})
 
 var ShotGun = new Gun({knockback: 10, shotDivergence: 6, distance: 15, width:40, height:16, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 260, ammo:2, ammoCount: 2, damage: 4, velocity: 30, reloadSpeed: 1000, pelletCount: 10})
 
@@ -70,7 +81,8 @@ var gun = pistol;
 
 states["play"] = function()
 {
-
+	if(player.health > 0)
+	{
 		//Apply acceleration to velocity. 
 		if(a)
 		{
@@ -247,28 +259,6 @@ states["play"] = function()
 				shotDelay = setTimeout(reset, gun.fireRate);
 			}
 		}
-		//Make variables
-		var change;
-		var time;
-		var delay = 500;
-		if(change == true && space ) //(Var 1 is your state, if its true you can do it false you cant)
-		{								  // Space in this is just the button being pressed down
-			
-			//First set var in if statement to false;
-			change = false;
-
-			//Clear your time VAR
-			clearTimeout(time)
-			//setTimeout calls a funtion "1" (1, 2) and a time in MS "2"
-			time = setTimeout(set, delay)
-		}
-		//reset var in if statement to true;
-		set = function()
-		{
-			change = true;
-		}
-		//Function should be out of Main/Animate (Its just here for Readability)
-
 		//Reloading Code
 		if(r && !mouseDown)
 		{
@@ -285,7 +275,6 @@ states["play"] = function()
 		level.x -= offset.x;
 		level.y -= offset.y;
 
-		//console.log("VX:  " + Math.cos(gun.angle) * gun.velocity + "   VY:  " +Math.sin(gun.angle) * gun.velocity);
 		//Draws the player
 		player.drawRect();
 		//player.drawDebug();
@@ -297,23 +286,27 @@ states["play"] = function()
 
 		//Enemy Spawnin
 		var spawns = [];
+		var empty = [];
 		var currSpawn;
 		var curX;
 		var curY;
 		var randDev;
+		var time;
+		var change = true;
 		spawns = getFurthestSpawnPoint(player);
 		var b = 0;
-		if(enemySpawns.length == 0)
+		if(!enemysAlive(enemySpawns))
 		{
+			enemySpawns = empty;
+			enemyAmount++;
 			for(var i = 0; i < enemyAmount; i++)
 			{
 				var random = Math.round(rand(0,2));
 				currSpawn = spawns[(spawns.length - 1) - random];
 				curX = currSpawn.x;
 				curY = currSpawn.y;
-				enemySpawns[i] = new Enemy({x:curX, y:curY, width:50, height:50, color: "red", damage: 5, force: 2, world: level, health: 40});
+				enemySpawns[i] = new Enemy({x:curX, y:curY, width:50, height:50, color: `rgb(${rand(0,255)}, ${rand(0,255)}, ${rand(0,255)})`, damage: 5, force: 2, world: level, health: 40});
 			}
-			console.log(enemySpawns);
 		}
 
 		//Collision
@@ -350,15 +343,18 @@ states["play"] = function()
 				{
 					player.health -= enemySpawns[em].damage * 2;
 					enemySpawns[em].x = 1000000000;
+					enemySpawns[em].health = 0;
 				}
 			}
 		}
 
+		//Draw Enemys
 		for(et in enemySpawns)
 		{
 			enemySpawns[et].drawTriangle();
 			follow(player, enemySpawns[et]);
 		}
+
 
 		//Bullet Collisions
 		for(var bullet = 0; bullet < _bullets.length; bullet++)
@@ -376,7 +372,8 @@ states["play"] = function()
 					{
 						_bullets[bullet].x = 10000000000000000;
 						enemySpawns[en].health -= _bullets[bullet].damage;
-						console.log(_bullets[bullet].damage + " " + enemySpawns[en].health)
+						enemySpawns[en].x += Math.cos((enemySpawns[en].angle * 180/Math.PI + 180)/180 * Math.PI) * 10;
+						enemySpawns[en].y += Math.sin((enemySpawns[en].angle * 180/Math.PI + 180)/180 * Math.PI) * 10;
 						if(enemySpawns[en].health <= 0)
 						{
 							enemySpawns[en].x = 100000000000000000000000; 							
@@ -418,6 +415,11 @@ states["play"] = function()
 		var health = new GameObject({x:canvas.width - 80 - offset.x, y:29 - offset.y, height:50, width:150 * (player.health/100), color: "red"})
 		healthBar.drawRect();
 		health.drawRect();
+	}
+	else
+	{
+		currentState = "menu";
+	}
 }
 
 //--------------------------------------------Animation Loop-------------------------------------------
@@ -428,6 +430,47 @@ function animate()
 }
 
 //-----------------------------------------------Functions----------------------------------------------
+
+function resetAllVars()
+{
+	offset = {x:player.vx, y:player.vy};
+	console.log(level.world);
+	player = new GameObject({width:50, height:50, angle:0, x:canvas.width/2, y:canvas.height - 300, force:1, color:"gray", health: 100})
+
+	pistol = new Gun({width:25, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 400, ammo:17, ammoCount: 17, damage: 5, velocity: 50, reloadSpeed: 700})
+	launcher = new Gun({explosive: true, explosionSize: 1, ammoSize: 3, width:80, height:16, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 400, ammo:1, ammoCount: 1, damage: 15, velocity: 20, reloadSpeed: 1600})
+	rifle = new Gun({distance: 15, width:60, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 100, ammo:30, ammoCount: 30, damage: 11, velocity: 50, reloadSpeed: 1000})
+	ShotGun = new Gun({knockback: 10, shotDivergence: 6, distance: 15, width:40, height:16, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 260, ammo:2, ammoCount: 2, damage: 4, velocity: 30, reloadSpeed: 1000, pelletCount: 10})
+	subGun = new Gun({ shotDivergence: 5, distance: 15, width:35, height:10, angle:0, x:canvas.width/2, y:canvas.height - 275, color:"black", fireRate: 50, ammo:50, ammoCount: 50, damage: 8, velocity: 30, reloadSpeed: 700, pelletCount: 1})
+	canRope = true;
+	gun = pistol;
+	pistol.ammo = pistol.ammoCount;
+	rifle.ammo = rifle.ammoCount;
+	ShotGun.ammo = ShotGun.ammoCount;
+	subGun.ammo = subGun.ammoCount;
+	launcher.ammo = launcher.ammoCount;
+
+	ropeTimer;
+	level.x = 0;
+	level.y = 0;
+	//Round/Enemy Vars
+	enemyAmount = 10;
+	rounds;
+	enemyDifficulty;
+	enemySpawns = [];
+	
+	//Bullet Vars
+	canShoot = true;
+	_bullets = [];
+	explosion = [];
+	empty = [];
+	hasAmmo = true;
+	shotDelay;
+	reloadDelay;
+	isLoading = false;
+	bulletCount = 0;
+}
+
 function getClosestPoint()
 {
 	level.point.sort((a, b) => a.distance(player) - b.distance(player));
@@ -482,12 +525,12 @@ reload = function(gun)
 
 enemysAlive = function(enemys)
 {
-	var yes = true;
+	var yes = false;
 	for(enemy in enemys)
 	{
-		if(enemy.health != 0)
+		if(enemys[enemy].health > 0)
 		{
-			yes = false;
+			yes = true;
 		}
 	}
 	return yes;
