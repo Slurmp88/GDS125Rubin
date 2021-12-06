@@ -301,7 +301,7 @@ states["play"] = function()
 			enemyAmount++;
 			for(var i = 0; i < enemyAmount; i++)
 			{
-				var random = Math.round(rand(0,2));
+				var random = Math.round(rand(0,4));
 				currSpawn = spawns[(spawns.length - 1) - random];
 				curX = currSpawn.x;
 				curY = currSpawn.y;
