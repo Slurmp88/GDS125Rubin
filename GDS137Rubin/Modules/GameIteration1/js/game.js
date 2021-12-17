@@ -48,19 +48,34 @@ var isLoading = false;
 var bulletCount = 0;
 //When moving the level, we first move the player as usual. Then we utilize an offset object to keep track of how much the collision detection affects the player's position. Then we move both the player and the level back the total number of pixels that the player moved over one loop of animation.
 
+
+var playBtn = new GameObject({width:300, height:100, angle:0, x:canvas.width/2, y:canvas.height - 100, color:"lime"});
+
 states["menu"] = function()
 {
 	context.save();
 	context.font = "30px Arial"
 	context.fillStyle = "black"
 	context.textAlign = "center";
-	context.fillText("Press SPACE to play!", canvas.width/2, canvas.height/2);
+	context.fillText("Use W A S D to move! Mouse 1 to shoot! R to Reload!", canvas.width/2, canvas.height*.33);
+	context.fillText("Pressing Space will launch you towards yellow circles!", canvas.width/2, canvas.height*.46); 
+	context.fillText("Pressing 1,2,3 will cycle through weapons!", canvas.width/2, canvas.height*.59); 
+	playBtn.drawRect();
+	context.fillText("Click to Play", canvas.width/2, canvas.height - 90); 
 	context.restore();
-	console.log(space);
-	if(space)
+
+	if(playBtn.hitTestPoint({x:mousex, y:mousey, world:player.world}))
 	{
-		resetAllVars();
-		currentState = "play";
+		playBtn.color = "red";
+		if(mouseDown)
+		{
+			resetAllVars();
+			currentState = "play";
+		}
+	}
+	else
+	{
+		playBtn.color = "lime";
 	}
 }
 
